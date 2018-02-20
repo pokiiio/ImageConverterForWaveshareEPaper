@@ -13,7 +13,7 @@ This python script extracts red areas of photos and show them on Waveshare e-Pap
 ## Usage
 
 ```py
-python show-image path-to-your-image
+python show-image.py path-to-your-image
 ```
 
 
