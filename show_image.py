@@ -44,7 +44,7 @@ def create_black_and_red_image(image):
 
 
 def show_image(black_image, red_image):
-    epd = epd2in13b.EPD()
+    epd = epd2in7b.EPD()
     epd.init()
 
     frame_black = epd.get_frame_buffer(black_image)
