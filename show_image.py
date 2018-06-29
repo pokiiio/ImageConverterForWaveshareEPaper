@@ -17,7 +17,7 @@ def create_resized_image():
     image = image.crop((0, (image.size[1] - E_PAPER_WIDTH) / 2, E_PAPER_HEIGHT,
                         (image.size[1] - E_PAPER_WIDTH) / 2 + E_PAPER_WIDTH))
 
-    image = image.rotate(270, expand=True)
+    image = image.rotate(90, expand=True)
     return image
 
 
