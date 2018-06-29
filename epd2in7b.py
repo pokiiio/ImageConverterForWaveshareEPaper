@@ -1,9 +1,9 @@
 ##
- #  @filename   :   epd2in13b.py
+ #  @filename   :   epd2in7b.py
  #  @brief      :   Implements for Dual-color e-paper library
  #  @author     :   Yehui from Waveshare
  #
- #  Copyright (C) Waveshare     August 15 2017
+ #  Copyright (C) Waveshare     July 31 2017
  #
  # Permission is hereby granted, free of charge, to any person obtaining a copy
  # of this software and associated documnetation files (the "Software"), to deal
@@ -31,10 +31,10 @@ import ImageFont
 import RPi.GPIO as GPIO
 
 # Display resolution
-EPD_WIDTH       = 104
-EPD_HEIGHT      = 212
+EPD_WIDTH       = 176
+EPD_HEIGHT      = 264
 
-# EPD2IN13B commands
+# EPD2IN7B commands
 PANEL_SETTING                               = 0x00
 POWER_SETTING                               = 0x01
 POWER_OFF                                   = 0x02
@@ -47,31 +47,31 @@ DATA_START_TRANSMISSION_1                   = 0x10
 DATA_STOP                                   = 0x11
 DISPLAY_REFRESH                             = 0x12
 DATA_START_TRANSMISSION_2                   = 0x13
-VCOM_LUT                                    = 0x20
-W2W_LUT                                     = 0x21
-B2W_LUT                                     = 0x22
-W2B_LUT                                     = 0x23
-B2B_LUT                                     = 0x24
+PARTIAL_DATA_START_TRANSMISSION_1           = 0x14
+PARTIAL_DATA_START_TRANSMISSION_2           = 0x15
+PARTIAL_DISPLAY_REFRESH                     = 0x16
+LUT_FOR_VCOM                                = 0x20
+LUT_WHITE_TO_WHITE                          = 0x21
+LUT_BLACK_TO_WHITE                          = 0x22
+LUT_WHITE_TO_BLACK                          = 0x23
+LUT_BLACK_TO_BLACK                          = 0x24
 PLL_CONTROL                                 = 0x30
-TEMPERATURE_SENSOR_CALIBRATION              = 0x40
-TEMPERATURE_SENSOR_SELECTION                = 0x41
+TEMPERATURE_SENSOR_COMMAND                  = 0x40
+TEMPERATURE_SENSOR_CALIBRATION              = 0x41
 TEMPERATURE_SENSOR_WRITE                    = 0x42
 TEMPERATURE_SENSOR_READ                     = 0x43
 VCOM_AND_DATA_INTERVAL_SETTING              = 0x50
 LOW_POWER_DETECTION                         = 0x51
 TCON_SETTING                                = 0x60
-RESOLUTION_SETTING                          = 0x61
+TCON_RESOLUTION                             = 0x61
+SOURCE_AND_GATE_START_SETTING               = 0x62
 GET_STATUS                                  = 0x71
 AUTO_MEASURE_VCOM                           = 0x80
 VCOM_VALUE                                  = 0x81
-VCM_DC_SETTING                              = 0x82
-PARTIAL_WINDOW                              = 0x90
-PARTIAL_IN                                  = 0x91
-PARTIAL_OUT                                 = 0x92
+VCM_DC_SETTING_REGISTER                     = 0x82
 PROGRAM_MODE                                = 0xA0
 ACTIVE_PROGRAM                              = 0xA1
 READ_OTP_DATA                               = 0xA2
-POWER_SAVING                                = 0xE3
 
 # Display orientation
 ROTATE_0                                    = 0
@@ -87,6 +87,61 @@ class EPD:
         self.width = EPD_WIDTH
         self.height = EPD_HEIGHT
         self.rotate = ROTATE_0
+
+    lut_vcom_dc = [
+        0x00    ,0x00,
+        0x00    ,0x1A    ,0x1A    ,0x00    ,0x00    ,0x01,        
+        0x00    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,        
+        0x00    ,0x0E    ,0x01    ,0x0E    ,0x01    ,0x10,        
+        0x00    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,        
+        0x00    ,0x04    ,0x10    ,0x00    ,0x00    ,0x05,        
+        0x00    ,0x03    ,0x0E    ,0x00    ,0x00    ,0x0A,        
+        0x00    ,0x23    ,0x00    ,0x00    ,0x00    ,0x01    
+    ]
+
+    # R21H
+    lut_ww = [
+        0x90    ,0x1A    ,0x1A    ,0x00    ,0x00    ,0x01,
+        0x40    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x84    ,0x0E    ,0x01    ,0x0E    ,0x01    ,0x10,
+        0x80    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x00    ,0x04    ,0x10    ,0x00    ,0x00    ,0x05,
+        0x00    ,0x03    ,0x0E    ,0x00    ,0x00    ,0x0A,
+        0x00    ,0x23    ,0x00    ,0x00    ,0x00    ,0x01
+    ]
+
+    # R22H    r
+    lut_bw = [
+        0xA0    ,0x1A    ,0x1A    ,0x00    ,0x00    ,0x01,
+        0x00    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x84    ,0x0E    ,0x01    ,0x0E    ,0x01    ,0x10,
+        0x90    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0xB0    ,0x04    ,0x10    ,0x00    ,0x00    ,0x05,
+        0xB0    ,0x03    ,0x0E    ,0x00    ,0x00    ,0x0A,
+        0xC0    ,0x23    ,0x00    ,0x00    ,0x00    ,0x01
+    ]
+
+    # R23H    w
+    lut_bb = [
+        0x90    ,0x1A    ,0x1A    ,0x00    ,0x00    ,0x01,
+        0x40    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x84    ,0x0E    ,0x01    ,0x0E    ,0x01    ,0x10,
+        0x80    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x00    ,0x04    ,0x10    ,0x00    ,0x00    ,0x05,
+        0x00    ,0x03    ,0x0E    ,0x00    ,0x00    ,0x0A,
+        0x00    ,0x23    ,0x00    ,0x00    ,0x00    ,0x01
+    ]
+
+    # R24H    b
+    lut_wb = [
+        0x90    ,0x1A    ,0x1A    ,0x00    ,0x00    ,0x01,
+        0x20    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x84    ,0x0E    ,0x01    ,0x0E    ,0x01    ,0x10,
+        0x10    ,0x0A    ,0x0A    ,0x00    ,0x00    ,0x08,
+        0x00    ,0x04    ,0x10    ,0x00    ,0x00    ,0x05,
+        0x00    ,0x03    ,0x0E    ,0x00    ,0x00    ,0x0A,
+        0x00    ,0x23    ,0x00    ,0x00    ,0x00    ,0x01
+    ]
 
     def digital_write(self, pin, value):
         epdif.epd_digital_write(pin, value)
@@ -113,20 +168,64 @@ class EPD:
         if (epdif.epd_init() != 0):
             return -1
         self.reset()
-        self.send_command(BOOSTER_SOFT_START)
-        self.send_data (0x17)
-        self.send_data (0x17)
-        self.send_data (0x17)
+
         self.send_command(POWER_ON)
         self.wait_until_idle()
+
         self.send_command(PANEL_SETTING)
-        self.send_data(0x8F)
+        self.send_data(0xaf)        #KW-BF   KWR-AF    BWROTP 0f
+        
+        self.send_command(PLL_CONTROL)
+        self.send_data(0x3a)       #3A 100HZ   29 150Hz 39 200HZ    31 171HZ
+
+        self.send_command(POWER_SETTING)
+        self.send_data(0x03)                  # VDS_EN, VDG_EN
+        self.send_data(0x00)                  # VCOM_HV, VGHL_LV[1], VGHL_LV[0]
+        self.send_data(0x2b)                  # VDH
+        self.send_data(0x2b)                  # VDL
+        self.send_data(0x09)                  # VDHR
+
+        self.send_command(BOOSTER_SOFT_START)
+        self.send_data(0x07)
+        self.send_data(0x07)
+        self.send_data(0x17)
+
+        # Power optimization
+        self.send_command(0xF8)
+        self.send_data(0x60)
+        self.send_data(0xA5)
+
+        # Power optimization
+        self.send_command(0xF8)
+        self.send_data(0x89)
+        self.send_data(0xA5)
+
+        # Power optimization
+        self.send_command(0xF8)
+        self.send_data(0x90)
+        self.send_data(0x00)
+        
+        # Power optimization
+        self.send_command(0xF8)
+        self.send_data(0x93)
+        self.send_data(0x2A)
+
+        # Power optimization
+        self.send_command(0xF8)
+        self.send_data(0x73)
+        self.send_data(0x41)
+
+        self.send_command(VCM_DC_SETTING_REGISTER)
+        self.send_data(0x12)                   
         self.send_command(VCOM_AND_DATA_INTERVAL_SETTING)
-        self.send_data(0x37)
-        self.send_command(RESOLUTION_SETTING)
-        self.send_data (0x68)
-        self.send_data (0x00)
-        self.send_data (0xD4)
+        self.send_data(0x87)        # define by OTP
+
+        self.set_lut()
+
+        self.send_command(PARTIAL_DISPLAY_REFRESH)
+        self.send_data(0x00)        
+
+        return 0
 
     def wait_until_idle(self):
         while(self.digital_read(self.busy_pin) == 0):      # 0: busy, 1: idle
@@ -136,7 +235,28 @@ class EPD:
         self.digital_write(self.reset_pin, GPIO.LOW)         # module reset
         self.delay_ms(200)
         self.digital_write(self.reset_pin, GPIO.HIGH)
-        self.delay_ms(200)
+        self.delay_ms(200)    
+
+    def set_lut(self):
+        self.send_command(LUT_FOR_VCOM)               # vcom
+        for count in range(0, 44):
+            self.send_data(self.lut_vcom_dc[count])
+        
+        self.send_command(LUT_WHITE_TO_WHITE)         # ww --
+        for count in range(0, 42):
+            self.send_data(self.lut_ww[count])
+        
+        self.send_command(LUT_BLACK_TO_WHITE)         # bw r
+        for count in range(0, 42):
+            self.send_data(self.lut_bw[count])
+
+        self.send_command(LUT_WHITE_TO_BLACK)         # wb w
+        for count in range(0, 42):
+            self.send_data(self.lut_bb[count])
+
+        self.send_command(LUT_BLACK_TO_BLACK)         # bb b
+        for count in range(0, 42):
+            self.send_data(self.lut_wb[count])
 
     def get_frame_buffer(self, image):
         buf = [0xFF] * (self.width * self.height / 8)
@@ -152,11 +272,17 @@ class EPD:
         for y in range(self.height):
             for x in range(self.width):
                 # Set the bits for the column of pixels at the current position.
-                if pixels[x, y] == 0:
+                if pixels[x, y] != 0:
                     buf[(x + y * self.width) / 8] &= ~(0x80 >> (x % 8))
         return buf
 
     def display_frame(self, frame_buffer_black, frame_buffer_red):
+        self.send_command(TCON_RESOLUTION)
+        self.send_data(EPD_WIDTH >> 8)
+        self.send_data(EPD_WIDTH & 0xff)        #176      
+        self.send_data(EPD_HEIGHT >> 8)        
+        self.send_data(EPD_HEIGHT & 0xff)       #264
+
         if (frame_buffer_black != None):
             self.send_command(DATA_START_TRANSMISSION_1)           
             self.delay_ms(2)
@@ -170,40 +296,35 @@ class EPD:
                 self.send_data(frame_buffer_red[i])  
             self.delay_ms(2)        
 
-        self.send_command(DISPLAY_REFRESH)
+        self.send_command(DISPLAY_REFRESH) 
         self.wait_until_idle()
 
-    # after this, call epd.init() to awaken the module
+    # After this command is transmitted, the chip would enter the deep-sleep
+    # mode to save power. The deep sleep mode would return to standby by
+    # hardware reset. The only one parameter is a check code, the command would
+    # be executed if check code = 0xA5. 
+    # Use EPD::Reset() to awaken and use EPD::Init() to initialize.
     def sleep(self):
-        self.send_command(VCOM_AND_DATA_INTERVAL_SETTING)
-        self.send_data(0x37)
-        self.send_command(VCM_DC_SETTING_REGISTER)         #to solve Vcom drop 
-        self.send_data(0x00)        
-        self.send_command(POWER_SETTING)         #power setting      
-        self.send_data(0x02)        #gate switch to external
-        self.send_data(0x00)
-        self.send_data(0x00) 
-        self.send_data(0x00) 
-        self.wait_until_idle()
-        self.send_command(POWER_OFF)         #power off
+        self.send_command(DEEP_SLEEP)
+        self.send_data(0xa5)
 
     def set_rotate(self, rotate):
         if (rotate == ROTATE_0):
             self.rotate = ROTATE_0
-            self.width = epdif.EPD_WIDTH
-            self.height = epdif.EPD_HEIGHT
+            self.width = EPD_WIDTH
+            self.height = EPD_HEIGHT
         elif (rotate == ROTATE_90): 
             self.rotate = ROTATE_90
-            self.width = epdif.EPD_HEIGHT
-            self.height = epdif.EPD_WIDTH
+            self.width = EPD_HEIGHT
+            self.height = EPD_WIDTH
         elif (rotate == ROTATE_180): 
             self.rotate = ROTATE_180
-            self.width = epdif.EPD_WIDTH
-            self.height = epdif.EPD_HEIGHT
+            self.width = EPD_WIDTH
+            self.height = EPD_HEIGHT
         elif (rotate == ROTATE_270): 
             self.rotate = ROTATE_270
-            self.width = epdif.EPD_HEIGHT
-            self.height = epdif.EPD_WIDTH
+            self.width = EPD_HEIGHT
+            self.height = EPD_WIDTH
 
     def set_pixel(self, frame_buffer, x, y, colored):
         if (x < 0 or x >= self.width or y < 0 or y >= self.height):
@@ -212,17 +333,17 @@ class EPD:
             self.set_absolute_pixel(frame_buffer, x, y, colored)
         elif (self.rotate == ROTATE_90):
             point_temp = x
-            x = epdif.EPD_WIDTH - y
+            x = EPD_WIDTH - y
             y = point_temp
             self.set_absolute_pixel(frame_buffer, x, y, colored)
         elif (self.rotate == ROTATE_180):
-            x = epdif.EPD_WIDTH - x
-            y = epdif.EPD_HEIGHT- y
+            x = EPD_WIDTH - x
+            y = EPD_HEIGHT- y
             self.set_absolute_pixel(frame_buffer, x, y, colored)
         elif (self.rotate == ROTATE_270):
             point_temp = x
             x = y
-            y = epdif.EPD_HEIGHT - point_temp
+            y = EPD_HEIGHT - point_temp
             self.set_absolute_pixel(frame_buffer, x, y, colored)
     
     def set_absolute_pixel(self, frame_buffer, x, y, colored):
@@ -232,9 +353,9 @@ class EPD:
         if (x < 0 or x >= EPD_WIDTH or y < 0 or y >= EPD_HEIGHT):
             return
         if (colored):
-            frame_buffer[(x + y * EPD_WIDTH) / 8] &= ~(0x80 >> (x % 8))
-        else:
             frame_buffer[(x + y * EPD_WIDTH) / 8] |= 0x80 >> (x % 8)
+        else:
+            frame_buffer[(x + y * EPD_WIDTH) / 8] &= ~(0x80 >> (x % 8))
 
     def draw_string_at(self, frame_buffer, x, y, text, font, colored):
         image = Image.new('1', (self.width, self.height))
@@ -327,8 +448,8 @@ class EPD:
             self.set_pixel(frame_buffer, x + x_pos, y + y_pos, colored)
             self.set_pixel(frame_buffer, x + x_pos, y - y_pos, colored)
             self.set_pixel(frame_buffer, x - x_pos, y - y_pos, colored)
-            self.draw_horizontal_line(frame_buffer, x + x_pos, y + y_pos, 2 * (-x_pos) + 1, colored)
-            self.draw_horizontal_line(frame_buffer, x + x_pos, y - y_pos, 2 * (-x_pos) + 1, colored)
+            self.draw_horizontal_line(frame_buffer, x + x_pos, y + y_pos, 2 * (-x_pos) + 1, colored);
+            self.draw_horizontal_line(frame_buffer, x + x_pos, y - y_pos, 2 * (-x_pos) + 1, colored);
             e2 = err
             if (e2 <= y_pos):
                 y_pos += 1

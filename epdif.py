@@ -3,7 +3,7 @@
  #  @brief      :   EPD hardware interface implements (GPIO, SPI)
  #  @author     :   Yehui from Waveshare
  #
- #  Copyright (C) Waveshare     July 10 2017
+ #  Copyright (C) Waveshare     July 4 2017
  #
  # Permission is hereby granted, free of charge, to any person obtaining a copy
  # of this software and associated documnetation files (the "Software"), to deal
@@ -34,6 +34,10 @@ DC_PIN          = 25
 CS_PIN          = 8
 BUSY_PIN        = 24
 
+# Display resolution
+EPD_WIDTH       = 176
+EPD_HEIGHT      = 264
+
 # SPI device, bus = 0, device = 0
 SPI = spidev.SpiDev(0, 0)
 
@@ -56,6 +60,7 @@ def epd_init():
     GPIO.setup(DC_PIN, GPIO.OUT)
     GPIO.setup(CS_PIN, GPIO.OUT)
     GPIO.setup(BUSY_PIN, GPIO.IN)
+
     SPI.max_speed_hz = 2000000
     SPI.mode = 0b00
     return 0;

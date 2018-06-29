@@ -1,10 +1,10 @@
 import sys
 import colorsys
-import epd2in13b
+import epd2in7b
 from PIL import Image, ImageOps
 
-E_PAPER_WIDTH = 104
-E_PAPER_HEIGHT = 212
+E_PAPER_WIDTH = 264
+E_PAPER_HEIGHT = 176
 
 
 def create_resized_image():
